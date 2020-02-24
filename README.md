@@ -73,7 +73,7 @@ The value to get, given you use the machine with the hostname and OS
 specified in the following table are:
 
 | Hostname | OS      | Value   |
-+----------+---------+---------+
+|----------|---------|---------|
 | host1    | Windows | OS/Host |
 | host1    | Linux   | Host    |
 | host2    | Windows | OS      |
