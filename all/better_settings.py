@@ -9,8 +9,8 @@ be synced between machines using different OSes or with specific
 configuration for each host without interfering between them.
 """
 import platform
-
 import sublime
+import datetime
 
 SCOPE_HOST_OS = "Host/OS"
 SCOPE_HOST = "Host"
@@ -27,15 +27,25 @@ ASK_SCOPE_ITEMS = [
     [SCOPE_HOST_OS, "Settings specific to this machine on this OS"],
 ]
 
+__DEBUG__ = False
 
-class BetterSettings(object):
+
+class _BetterSettings(object):
     def __init__(self, basepackage, package_name):
         self.basepackage = basepackage
         self.package_name = package_name
-        self.hostplatform_settings = None
-        self.host_settings = None
-        self.platform_settings = None
-        self.user_settings = None
+
+        self.hostplatform_settings = sublime.load_settings(
+            self.get_hostplatform_settings_filename()
+        )
+
+        self.host_settings = sublime.load_settings(self.get_host_settings_filename())
+
+        self.platform_settings = sublime.load_settings(
+            self.get_platform_settings_filename()
+        )
+
+        self.user_settings = sublime.load_settings(self.get_settings_filename())
 
     def get(self, setting_name, default=None):
         return self.hostplatform_settings.get(
@@ -61,21 +71,6 @@ class BetterSettings(object):
             raise Exception("You should not save the default settings")
         else:
             raise Exception("Invalid scope specified: %s" % (scope))
-
-    def load(self):
-        self.hostplatform_settings = sublime.load_settings(
-            self.get_hostplatform_settings_filename()
-        )
-
-        self.host_settings = sublime.load_settings(self.get_host_settings_filename())
-
-        self.platform_settings = sublime.load_settings(
-            self.get_platform_settings_filename()
-        )
-
-        self.user_settings = sublime.load_settings(self.get_settings_filename())
-
-        self.loaded_ = True
 
     def save(self):
         sublime.save_settings(self, self.get_hostplatform_settings_filename())
@@ -134,13 +129,13 @@ class BetterSettings(object):
 
     def get_settings_pieces(self, scope):
         if scope == SCOPE_HOST_OS:
-            return ("User/", self.get_hostplatform_settings_filename())
+            return ("User", self.get_hostplatform_settings_filename())
         if scope == SCOPE_HOST:
-            return ("User/", self.get_host_settings_filename())
+            return ("User", self.get_host_settings_filename())
         elif scope == SCOPE_USER:
-            return ("User/", self.get_settings_filename())
+            return ("User", self.get_settings_filename())
         elif scope == SCOPE_OS:
-            return ("User/", self.get_platform_settings_filename())
+            return ("User", self.get_platform_settings_filename())
         elif scope == SCOPE_DEFAULT:
             return (self.basepackage, self.get_settings_filename())
         else:
@@ -148,15 +143,18 @@ class BetterSettings(object):
 
     def open_settings(self, window, scope=None):
         def do_open_settings(selected_scope):
-            window.run_command(
-                "open_file", {"file": self.get_settings_file_path(selected_scope)}
-            )
+            settings_file_path = self.get_settings_file_path(selected_scope)
+
+            self.log("Opening %s" % (settings_file_path,))
+
+            window.run_command("open_file", {"file": settings_file_path})
 
         def on_ask_scope_done(selected_index):
             if selected_index < 0:
                 return
 
             selected_scope = ASK_SCOPE_ITEMS[selected_index][0]
+
             do_open_settings(selected_scope)
 
         def ask_scope_and_open_settings():
@@ -166,3 +164,19 @@ class BetterSettings(object):
             ask_scope_and_open_settings()
         else:
             do_open_settings(scope)
+
+    def log(self, *args):
+        if __DEBUG__:
+            print(
+                "[BetterSettings(%s:%s)][%s]"
+                % (
+                    self.basepackage,
+                    self.package_name,
+                    datetime.datetime.now().strftime("%H:%M:%S.%f"),
+                ),
+                *args
+            )
+
+
+def load_for(basepackage, package_name):
+    return _BetterSettings(basepackage, package_name)
