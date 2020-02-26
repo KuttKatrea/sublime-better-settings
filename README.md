@@ -9,19 +9,26 @@ This allows to keep the settings file in the User package, so they can
 be synced between machines using different OSes or with specific
 configuration for each host without interfering between them.
 
-To implement, you can create an instance of the
-`better_settings.BetterSettings` class.
+To implement, you should load the settings in the `plugin_loaded` method
+of your package:
 
-    settings = BetterSettings(__package__, "My Package")
+```python
+import better_settings
+settings = None
 
-the, use the `load` method to load the different settings files for each specifity.
+def plugin_loaded():
+    global settings
+    settings = better_settings.load_for(__package__, "MyPackage")
+```
+
+Where `__package__` should be the one of the main file of your package, as it's going to be used to get the path of the default settings when using the oepn settings command, and `MyPackage` is the name of the settings file you want to use (typically, it's the name of your package).
 
 The format of the file names is as follows:
 
-- For user settings: `My Package.sublime-settings`
-- For OS-level settings: `My Package (Windows).sublime-settings`
-- For Host-level settings: `My Package (hostname).sublime-settings`
-- For Host/OS-level settings: `My Package (hostname on Windows).sublime-settings`
+- For user settings: `MyPackage.sublime-settings`
+- For OS-level settings: `MyPackage (Windows).sublime-settings`
+- For Host-level settings: `MyPackage (hostname).sublime-settings`
+- For Host/OS-level settings: `MyPackage (hostname on Windows).sublime-settings`
 
 Once loaded, you can use the `get` method to get the most specific value
 for a setting.
@@ -38,28 +45,28 @@ Precedency is as follows:
 If you have the following files in your User package folder:
 
 ```javascript
-// My Package.sublime-settings
+// MyPackage.sublime-settings
 {
   "source": "User"
 }
 ```
 
 ```javascript
-// My Package (Windows).sublime-settings
+// MyPackage (Windows).sublime-settings
 {
   "source": "OS"
 }
 ```
 
 ```javascript
-// My Package (host1).sublime-settings
+// MyPackage (host1).sublime-settings
 {
   "source": "Host"
 }
 ```
 
 ```javascript
-// My Package (host1 on Windows).sublime-settings
+// MyPackage (host1 on Windows).sublime-settings
 {
   "source": "OS/Host"
 }
@@ -78,3 +85,28 @@ specified in the following table are:
 | host1    | Linux   | Host    |
 | host2    | Windows | OS      |
 | host2    | Linux   | User    |
+
+## Command to open the settings file
+
+You can implement a command to open the settings files:
+
+```python
+class MyPackageOpenSettings(sublime_plugin.WindowCommand):
+    def __init__(self, *args, **kwargs):
+        sublime_plugin.WindowCommand.__init__(self, *args, **kwargs)
+
+    def run(self):
+        # global settings  # Not required as we are not replacing the instance
+        settings.open_settings(self.window)
+```
+
+And then use it on your `MyPackage.sublime-commands` file as follows:
+
+```json
+[
+  {
+        "caption": "Preferences: MyPackage Settings",
+        "command": "my_package_open_settings"
+  }
+]
+```
