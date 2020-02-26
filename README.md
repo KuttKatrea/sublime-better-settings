@@ -110,3 +110,7 @@ And then use it on your `MyPackage.sublime-commands` file as follows:
   }
 ]
 ```
+
+## Packages using this dependency
+
+* [ToolRunner](https://github.com/KuttKatrea/sublime-toolrunner)
