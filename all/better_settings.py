@@ -10,7 +10,6 @@ configuration for each host without interfering between them.
 """
 import platform
 import sublime
-import datetime
 import logging
 
 from collections import OrderedDict
@@ -29,7 +28,7 @@ ASK_SCOPE_ITEMS = [
 
 __DEBUG__ = False
 
-_valid_scopes = set([SCOPE_DEFAULT, SCOPE_OS, SCOPE_HOST, SCOPE_HOST_OS])
+_valid_scopes = {SCOPE_DEFAULT, SCOPE_OS, SCOPE_HOST, SCOPE_HOST_OS}
 _logger = logging.getLogger(__name__)
 
 
@@ -107,10 +106,10 @@ class _ScopedSettings(object):
         self.settings = settings
 
 
-def load_for(default_settings_dir, package_name):
+def load_for(default_settings_dir, settings_name):
     def get_settings_filename(special=None):
         special = " (" + special + ")" if special else ""
-        return "".join((package_name, special, ".sublime-settings"))
+        return "".join((settings_name, special, ".sublime-settings"))
 
     def load_scoped_settings(filename):
         return _ScopedSettings(filename, sublime.load_settings(filename))
